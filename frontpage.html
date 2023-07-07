@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>HTML to PDF Converter</title>
+</head>
+<body>
+  <h1>HTML to PDF Converter</h1>
+
+  <form id="uploadForm" enctype="multipart/form-data">
+    <label for="htmlFile">Upload HTML File:</label>
+    <input type="file" id="htmlFile" accept=".html">
+    <br>
+    <label for="cssFile">Upload CSS File:</label>
+    <input type="file" id="cssFile" accept=".css">
+    <br>
+    <button id="renderButton" type="button">Render PDF</button>
+  </form>
+
+  <div id="previewContainer"></div>
+
+  <script>
+    const socket = new WebSocket('ws://localhost:3000');
+
+    socket.addEventListener('open', (event) => {
+      console.log('WebSocket connection opened');
+    });
+
+    socket.addEventListener('message', (event) => {
+      const message = event.data;
+      const messageObj = JSON.parse(message);
+
+      if (messageObj.type === 'preview') {
+        const previewUrl = messageObj.url;
+        document.getElementById('previewContainer').innerHTML = `
+          <iframe src="${previewUrl}" style="width: 100%; height: 500px;"></iframe>
+          <a href="${previewUrl}" download="preview.pdf">Download PDF</a>
+        `;
+      }
+    });
+
+    document.getElementById('renderButton').addEventListener('click', () => {
+      const htmlFile = document.getElementById('htmlFile').files[0];
+      const cssFile = document.getElementById('cssFile').files[0];
+
+      const formData = new FormData();
+      formData.append('htmlFile', htmlFile);
+      formData.append('cssFile', cssFile);
+
+      socket.send(JSON.stringify({ type: 'render', formData }));
+    });
+  </script>
+</body>
+</html>
+
+
